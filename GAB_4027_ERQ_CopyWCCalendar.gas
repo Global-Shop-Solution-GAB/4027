@@ -1,0 +1,302 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("Copy WC Calendar")
+gui.Form1..size(4155,4995)
+gui.Form1..minx(0)
+gui.Form1..miny(0)
+gui.Form1..position(0,0)
+gui.Form1..event(unload,form1_unload)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(False)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(False)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.frame1.create(frame)
+gui.Form1.frame1.caption("Source WorkCenter")
+gui.Form1.frame1.size(2300,855)
+gui.Form1.frame1.position(200,200)
+gui.Form1.frame1.visible(True)
+gui.Form1.frame1.fontname("Arial")
+gui.Form1.frame1.fontsize(8)
+gui.Form1.frame2.create(frame)
+gui.Form1.frame2.caption("Destination WorkCenters")
+gui.Form1.frame2.size(2300,3195)
+gui.Form1.frame2.position(190,1145)
+gui.Form1.frame2.visible(True)
+gui.Form1.frame2.fontname("Arial")
+gui.Form1.frame2.fontsize(8)
+gui.Form1.ddlSourceWC.create(dropdownlist)
+gui.Form1.ddlSourceWC.visible(True)
+gui.Form1.ddlSourceWC.size(1900,330)
+gui.Form1.ddlSourceWC.zorder(0)
+gui.Form1.ddlSourceWC.position(200,335)
+gui.Form1.ddlSourceWC.enabled(True)
+gui.Form1.ddlSourceWC.parent("frame1")
+gui.Form1.ddlSourceWC.fontname("Arial")
+gui.Form1.ddlSourceWC.fontsize(8)
+gui.Form1.ddlSourceWC.tooltip("Choose which workcenter you want to copy the calendar from...")
+gui.Form1.ddlSourceWC.defaultvalue("")
+gui.Form1.ddlSourceWC.controlgroup(0)
+gui.Form1.cmdCopy.create(button)
+gui.Form1.cmdCopy.caption("Copy")
+gui.Form1.cmdCopy.visible(True)
+gui.Form1.cmdCopy.size(1230,510)
+gui.Form1.cmdCopy.zorder(0)
+gui.Form1.cmdCopy.position(2615,2385)
+gui.Form1.cmdCopy.enabled(True)
+gui.Form1.cmdCopy.fontname("Arial")
+gui.Form1.cmdCopy.fontsize(8)
+gui.Form1.cmdCopy.event(click,cmdcopy_click)
+gui.Form1.cmdCopy.defaultvalue("")
+gui.Form1.cmdCopy.controlgroup(0)
+gui.Form1.cmdSelectAll.create(button)
+gui.Form1.cmdSelectAll.caption("Select All")
+gui.Form1.cmdSelectAll.visible(True)
+gui.Form1.cmdSelectAll.size(1230,510)
+gui.Form1.cmdSelectAll.zorder(0)
+gui.Form1.cmdSelectAll.position(2615,1250)
+gui.Form1.cmdSelectAll.enabled(True)
+gui.Form1.cmdSelectAll.fontname("Arial")
+gui.Form1.cmdSelectAll.fontsize(8)
+gui.Form1.cmdSelectAll.event(click,cmdselectall_click)
+gui.Form1.cmdSelectAll.defaultvalue("")
+gui.Form1.cmdSelectAll.controlgroup(0)
+gui.Form1.cmdClearAll.create(button)
+gui.Form1.cmdClearAll.caption("Clear All")
+gui.Form1.cmdClearAll.visible(True)
+gui.Form1.cmdClearAll.size(1230,510)
+gui.Form1.cmdClearAll.zorder(0)
+gui.Form1.cmdClearAll.position(2615,1820)
+gui.Form1.cmdClearAll.enabled(True)
+gui.Form1.cmdClearAll.fontname("Arial")
+gui.Form1.cmdClearAll.fontsize(8)
+gui.Form1.cmdClearAll.event(click,cmdclearall_click)
+gui.Form1.cmdClearAll.defaultvalue("")
+gui.Form1.cmdClearAll.controlgroup(0)
+gui.Form1.gsfgDestinationWC.create(gsflexgrid)
+gui.Form1.gsfgDestinationWC.FixedRows(0)
+gui.Form1.gsfgDestinationWC.FixedCols(0)
+gui.Form1.gsfgDestinationWC.visible(True)
+gui.Form1.gsfgDestinationWC.size(2190,2940)
+gui.Form1.gsfgDestinationWC.zorder(0)
+gui.Form1.gsfgDestinationWC.position(45,205)
+gui.Form1.gsfgDestinationWC.enabled(True)
+gui.Form1.gsfgDestinationWC.parent("frame2")
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.udtDestinationWC.Define("WC",String,MACHINE)
+Variable.UDT.udtDestinationWC.Define("Selected",Boolean)
+Variable.uGlobal.uDestinationWC.Declare("udtDestinationWC")
+Variable.uGlobal.uDestinationWC_Clone.Declare("udtDestinationWC")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+
+
+'Create and open a database connection
+V.Local.sCon.Declare(String)
+F.Intrinsic.String.Concat("Global_",V.Caller.CompanyCode,V.Local.sCon)
+F.ODBC.Connection!Conn.OpenConnection(V.Local.sCon,V.Ambient.PUser,V.Ambient.PPass)
+
+F.ODBC.Connection!Conn.OpenLocalRecordsetRO("RS","select DISTINCT MACHINE from WORKCENTERS order by MACHINE")
+	'Load ddlSourceWC
+	F.Intrinsic.Control.DoUntil(V.ODBC.Conn!RS.EOF,"=",True)
+		Gui.Form1.ddlSourceWC.AddItem(V.ODBC.Conn!RS.FieldVal!MACHINE)
+		F.ODBC.Conn!RS.MoveNext
+	F.Intrinsic.Control.Loop
+	
+	'Move back to beginning of data to load DestinationWC
+	F.ODBC.Conn!RS.MoveFirst
+
+	'Load gsfgDestinationWC
+	F.Intrinsic.Control.CallSub(Destinationwc_buildstyle)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("Conn","RS","V.uGlobal.uDestinationWC",False)
+	Gui.Form1.gsfgDestinationWC.LoadFromUDT("V.uGlobal.uDestinationWC","WC*!*Selected",2)
+	
+F.ODBC.Conn!RS.Close
+
+'Display the form
+Gui.Form1..Show
+
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4027_ERQ_CopyWCCalendar.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+program.sub.form1_unload.start
+
+F.ODBC.Connection!Conn.Close
+F.Intrinsic.Control.End
+
+program.sub.form1_unload.end
+
+program.sub.cmdcopy_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdcopy_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+
+
+V.Local.sWC.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.sSQL.Declare(String)
+V.Local.sStatusMsg.Declare(String)
+
+'CHRIS O :: Next three lines are to redim the UDT - Chris may address this, and then it won't be necessary.
+V.Local.iUB.Declare(Long)
+F.Intrinsic.Math.Sub(V.Screen.Form1!gsfgDestinationWC.Rows,2,V.Local.iUB)
+V.uGlobal.uDestinationWC_Clone.Redim(0,V.Local.iUB)
+
+'Make sure a source WC is selected
+F.Intrinsic.Control.If(V.Screen.Form1!ddlSourceWC.Text,=,"")
+	F.Intrinsic.UI.Msgbox("Please select a source WorkCenter.","Selection Required")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+'Retrieve list of destination WCs
+Gui.Form1.gsfgDestinationWC.ExportToUDT(V.uGlobal.uDestinationWC_Clone,"0*!*1","WC*!*Selected",1,-1,False)
+F.Intrinsic.Variable.UDTFlagAll(V.uGlobal.uDestinationWC_Clone)
+F.Intrinsic.Variable.UDTMultiUnFlag(V.uGlobal.uDestinationWC_Clone!Selected,True)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uDestinationWC_Clone)
+F.Intrinsic.Variable.UDTToString(V.uGlobal.uDestinationWC_Clone,"WC","*!*","",V.Local.sWC)
+F.Intrinsic.String.Split(V.Local.sWC,"*!*",V.Local.sWC)
+
+F.Intrinsic.UI.InvokeWaitDialog("Copying...","Copying WC Calendars")
+
+F.Intrinsic.Control.For(V.Local.i,0,V.Local.sWC.UBound,1)
+	'If our Source WC is the same as our Destination WC, don't do anything (goto the next WC)
+	F.Intrinsic.Control.If(V.Local.sWC(V.Local.i),<>,V.Screen.Form1!ddlSourceWC.Text)
+		
+		V.Local.sStatusMsg.Set("Copying calendar from {0} to {1}...")
+		F.Intrinsic.String.Build(V.Local.sStatusMsg,V.Screen.Form1!ddlSourceWC.Text,V.Local.sWC(V.Local.i),V.Local.sStatusMsg)
+		F.Intrinsic.UI.ChangeWaitStatus(V.Local.sStatusMsg,V.Local.i,0,V.Local.sWC.UBound)
+		
+		'Delete current calendar in preparation for the copy (re-insertion)...
+		V.Local.sSQL.Set("delete from WC_CALENDAR where WORKCENTER='{0}'")
+		F.Intrinsic.String.Build(V.Local.sSQL,V.Local.sWC(V.Local.i),V.Local.sSQL)
+		F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+		
+		'Copy calendar from source to destination
+		V.Local.sSQL.Set("insert into WC_CALENDAR select '{0}', IN_USE_1_1,BEGIN_TIME_1_1,LENGTH_HRS_1_1,NO_MACH_1_1,IN_USE_1_2,BEGIN_TIME_1_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_1_2,NO_MACH_1_2,IN_USE_1_3,BEGIN_TIME_1_3,LENGTH_HRS_1_3,NO_MACH_1_3,IN_USE_1_4,BEGIN_TIME_1_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_1_4,NO_MACH_1_4,IN_USE_1_5,BEGIN_TIME_1_5,LENGTH_HRS_1_5,NO_MACH_1_5,IN_USE_1_6,BEGIN_TIME_1_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_1_6,NO_MACH_1_6,IN_USE_2_1,BEGIN_TIME_2_1,LENGTH_HRS_2_1,NO_MACH_2_1,IN_USE_2_2,BEGIN_TIME_2_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_2_2,NO_MACH_2_2,IN_USE_2_3,BEGIN_TIME_2_3,LENGTH_HRS_2_3,NO_MACH_2_3,IN_USE_2_4,BEGIN_TIME_2_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_2_4,NO_MACH_2_4,IN_USE_2_5,BEGIN_TIME_2_5,LENGTH_HRS_2_5,NO_MACH_2_5,IN_USE_2_6,BEGIN_TIME_2_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_2_6,NO_MACH_2_6,IN_USE_3_1,BEGIN_TIME_3_1,LENGTH_HRS_3_1,NO_MACH_3_1,IN_USE_3_2,BEGIN_TIME_3_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_3_2,NO_MACH_3_2,IN_USE_3_3,BEGIN_TIME_3_3,LENGTH_HRS_3_3,NO_MACH_3_3,IN_USE_3_4,BEGIN_TIME_3_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_3_4,NO_MACH_3_4,IN_USE_3_5,BEGIN_TIME_3_5,LENGTH_HRS_3_5,NO_MACH_3_5,IN_USE_3_6,BEGIN_TIME_3_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_3_6,NO_MACH_3_6,IN_USE_4_1,BEGIN_TIME_4_1,LENGTH_HRS_4_1,NO_MACH_4_1,IN_USE_4_2,BEGIN_TIME_4_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_4_2,NO_MACH_4_2,IN_USE_4_3,BEGIN_TIME_4_3,LENGTH_HRS_4_3,NO_MACH_4_3,IN_USE_4_4,BEGIN_TIME_4_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_4_4,NO_MACH_4_4,IN_USE_4_5,BEGIN_TIME_4_5,LENGTH_HRS_4_5,NO_MACH_4_5,IN_USE_4_6,BEGIN_TIME_4_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_4_6,NO_MACH_4_6,IN_USE_5_1,BEGIN_TIME_5_1,LENGTH_HRS_5_1,NO_MACH_5_1,IN_USE_5_2,BEGIN_TIME_5_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_5_2,NO_MACH_5_2,IN_USE_5_3,BEGIN_TIME_5_3,LENGTH_HRS_5_3,NO_MACH_5_3,IN_USE_5_4,BEGIN_TIME_5_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_5_4,NO_MACH_5_4,IN_USE_5_5,BEGIN_TIME_5_5,LENGTH_HRS_5_5,NO_MACH_5_5,IN_USE_5_6,BEGIN_TIME_5_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_5_6,NO_MACH_5_6,IN_USE_6_1,BEGIN_TIME_6_1,LENGTH_HRS_6_1,NO_MACH_6_1,IN_USE_6_2,BEGIN_TIME_6_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_6_2,NO_MACH_6_2,IN_USE_6_3,BEGIN_TIME_6_3,LENGTH_HRS_6_3,NO_MACH_6_3,IN_USE_6_4,BEGIN_TIME_6_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_6_4,NO_MACH_6_4,IN_USE_6_5,BEGIN_TIME_6_5,LENGTH_HRS_6_5,NO_MACH_6_5,IN_USE_6_6,BEGIN_TIME_6_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_6_6,NO_MACH_6_6,IN_USE_7_1,BEGIN_TIME_7_1,LENGTH_HRS_7_1,NO_MACH_7_1,IN_USE_7_2,BEGIN_TIME_7_2,")
+		V.Local.sSQL.Append("LENGTH_HRS_7_2,NO_MACH_7_2,IN_USE_7_3,BEGIN_TIME_7_3,LENGTH_HRS_7_3,NO_MACH_7_3,IN_USE_7_4,BEGIN_TIME_7_4,")
+		V.Local.sSQL.Append("LENGTH_HRS_7_4,NO_MACH_7_4,IN_USE_7_5,BEGIN_TIME_7_5,LENGTH_HRS_7_5,NO_MACH_7_5,IN_USE_7_6,BEGIN_TIME_7_6,")
+		V.Local.sSQL.Append("LENGTH_HRS_7_6,NO_MACH_7_6,FILLER from WC_CALENDAR WHERE WORKCENTER='{1}'")
+		F.Intrinsic.String.Build(V.Local.sSQL,V.Local.sWC(V.Local.i),V.Screen.Form1!ddlSourceWC.Text,V.Local.sSQL)
+		F.ODBC.Connection!Conn.Execute(V.Local.sSQL)
+		
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.i)
+
+F.Intrinsic.UI.CloseWaitDialog
+
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdcopy_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4027_ERQ_CopyWCCalendar.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+
+
+program.sub.cmdcopy_click.end
+
+program.sub.cmdselectall_click.start
+
+F.Intrinsic.Control.CallSub(Changeallselected,"SetSelected",True)
+
+program.sub.cmdselectall_click.end
+
+program.sub.cmdclearall_click.start
+
+F.Intrinsic.Control.CallSub(Changeallselected,"SetSelected",False)
+
+program.sub.cmdclearall_click.end
+
+Program.Sub.DestinationWC_BuildStyle.Start
+V.Local.sTitles.Declare(String)
+V.Local.i.Declare(Long)
+
+Gui.Form1.gsfgDestinationWC.Cols(2)
+Gui.Form1.gsfgDestinationWC.Rows(2)
+
+Gui.Form1.gsfgDestinationWC.SetColumnPercentages(".6:.4")
+
+F.Intrinsic.String.Split("WC*!*Selected","*!*",V.Local.sTitles)
+F.Intrinsic.Control.For(V.Local.i,0,V.Local.sTitles.UBound,1)
+	Gui.Form1.gsfgDestinationWC.TextMatrix(V.Local.i,0,V.Local.sTitles(v.Local.i))
+	Gui.Form1.gsfgDestinationWC.BuildStyle(1,V.Local.i,"Type","Locked","True")
+	Gui.Form1.gsfgDestinationWC.BuildStyle(1,V.Local.i,"Format","Alignment","2")
+F.Intrinsic.Control.Next(V.Local.i)
+Gui.Form1.gsfgDestinationWC.ApplyStyle(0,1)
+Gui.Form1.gsfgDestinationWC.FixedRows(1)
+
+Gui.Form1.gsfgDestinationWC.BuildStyle(2,0,"Type","Locked","True")
+Gui.Form1.gsfgDestinationWC.BuildStyle(2,0,"Format","Alignment","2")
+Gui.Form1.gsfgDestinationWC.BuildStyle(2,1,"Type","Checkbox",0)
+Gui.Form1.gsfgDestinationWC.BuildStyle(2,1,"Format","Alignment","4")
+
+Program.Sub.DestinationWC_BuildStyle.End
+
+Program.Sub.ChangeAllSelected.Start
+
+Gui.Form1.gsfgDestinationWC.Visible(False)
+F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uDestinationWC!Selected,V.Args.SetSelected)
+Gui.Form1.gsfgDestinationWC.LoadFromUDT("V.uGlobal.uDestinationWC","WC*!*Selected",2)
+Gui.Form1.gsfgDestinationWC.Visible(True)
+
+Program.Sub.ChangeAllSelected.End
+
+
